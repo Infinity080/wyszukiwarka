@@ -6,6 +6,11 @@ services:
     depends_on:
       - redis
       - qdrant
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
 
   redis:
     image: redis:latest
