@@ -3,3 +3,7 @@ qdrant-client
 redis
 uvicorn
 requests
+sentence-transformers
+scikit-learn
+pandas
+numpy
