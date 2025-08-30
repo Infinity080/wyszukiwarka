@@ -12,9 +12,22 @@ class AIService:
 
     def load_dataset(self, file_path: str) -> pd.DataFrame:
         if not self.texts:
-            self.texts = pd.read_csv(file_path)
-        return pd.DataFrame(self.texts, columns=['title','author','description'])
-    
+            df = pd.read_csv(file_path)
+            # id
+            df.reset_index(inplace=True)
+            df.insert(0, 'id', df.pop('index'))
+
+            # text
+            text_columns = ["description", "excerpt", "notes"]
+            df["text"] = df[text_columns].fillna("").astype(str).agg(' '.join, axis=1)
+            
+            # metadata
+            metadata_columns = [column for column in df.columns if column not in text_columns + ["id", "text"]]
+            df["metadata"] = df[metadata_columns].to_dict(orient='records')
+
+            self.texts = df[["id", "text", "metadata"]]
+        return self.texts
+
 test_service = AIService("all-MiniLM-L6-v2", [])
 print(test_service.load_dataset("data/commonlit_texts.csv"))
 
