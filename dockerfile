@@ -6,6 +6,7 @@ COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir -r requirements.txt
 
-COPY src/ .
+COPY src/ /app/
+COPY data/ /app/data/
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
