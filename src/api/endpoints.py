@@ -5,7 +5,7 @@ router = APIRouter()
 
 # return service status
 @router.get("/healthz")
-async def healthz():
+async def healthz() -> dict[str, str]:
     try:
         await qdrant_client.info() # version call to health check
         qdrant_health = True  
