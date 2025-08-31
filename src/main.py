@@ -9,13 +9,9 @@ app.include_router(router)
 
 @app.on_event("startup")
 async def main():
-    # health checks
-    from api.endpoints import healthz
-    await healthz()
-
     # setup
     await setup_qdrant_collection("main", 384, "COSINE")
     # dependency injection
-    app.state.ai = await AIService.create("all-MiniLM-L6-v2", "main", qdrant_client)
+    app.state.ai = AIService("all-MiniLM-L6-v2", "main", qdrant_client) # not calling create yet, only on /ingest
     app.state.qdrant_client = qdrant_client
     app.state.redis_client = redis_client

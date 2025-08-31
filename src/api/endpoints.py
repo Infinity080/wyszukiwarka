@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from api.dependencies import get_ai_service, get_qdrant_client, get_redis_client
 from ai import AIService
 
@@ -30,6 +30,9 @@ async def healthz(qdrant_client = Depends(get_qdrant_client), redis_client = Dep
 
 @router.post("/search")
 async def search(q: str, k: int = 10, ai: AIService = Depends(get_ai_service), redis_client = Depends(get_redis_client)) -> dict:
+    if ai.texts.empty:
+        return {"results": []}
+
     similar = await ai.find_k_similar(q, k)
 
     # save q to redis with score and timestamp
@@ -38,3 +41,11 @@ async def search(q: str, k: int = 10, ai: AIService = Depends(get_ai_service), r
     await redis_client.lpush("queries", f"{timestamp}:{q}") 
 
     return {"results": similar.to_dict(orient="records")}
+
+@router.post("/ingest")
+async def ingest (request: Request, ai: AIService = Depends(get_ai_service)) -> dict:
+    # reinstantiate the AIService to load a dataset, create embeddings and save to Qdrant
+    new_ai = await AIService.create("all-MiniLM-L6-v2", "main", ai.qdrant_client)
+    request.app.state.ai = new_ai
+
+    return {"status" : "ingest finished"}
