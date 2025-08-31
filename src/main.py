@@ -15,8 +15,4 @@ async def main():
 
     # setup
     await setup_qdrant_collection("main", 384, "COSINE")
-    ai = AIService("all-MiniLM-L6-v2")
-    embeddings = ai._generate_embeddings()
-
-    # save to qdrant
-    await ai.save_embeddings_to_qdrant("main", embeddings)
+    ai = await AIService.create("all-MiniLM-L6-v2", "main")
