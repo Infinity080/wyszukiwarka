@@ -59,3 +59,20 @@ class AIService:
                 collection_name=self.collection_name,
                 points=batch
             )
+
+    async def find_k_similar(self, prompt: str, k: int = 5) -> pd.DataFrame:
+        prompt_embedding = self.model.encode([prompt])
+        
+        k_similar = await self.qdrant_client.search(
+            collection_name=self.collection_name,
+            query_vector=prompt_embedding[0].tolist(),
+            limit=k
+        )
+
+        return pd.DataFrame([
+        {
+            "id": item.id,
+            "text": item.payload.get("text", ""),
+            "score": item.score,
+            **{key: value for key, value in item.payload.items()}
+        } for item in k_similar ])
