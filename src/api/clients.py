@@ -1,5 +1,5 @@
 import redis.asyncio as redis
-from qdrant_client.async_qdrant_client import AsyncQdrantClient as QdrantClient
+from qdrant_client.async_qdrant_client import AsyncQdrantClient
 import os
 from qdrant_client.models import Distance, VectorParams
 
@@ -9,7 +9,7 @@ redis_client: redis.Redis = redis.Redis(
     db=0
 )
 
-qdrant_client: QdrantClient = QdrantClient(
+qdrant_client: AsyncQdrantClient = AsyncQdrantClient(
     host=os.getenv("QDRANT_HOST", "localhost"),
     port=int(os.getenv("QDRANT_PORT", 6333)),
     timeout=60.0

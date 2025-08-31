@@ -1,11 +1,12 @@
-from fastapi import APIRouter
-from api.clients import qdrant_client, redis_client
+from fastapi import APIRouter, Depends
+from api.dependencies import get_ai_service, get_qdrant_client, get_redis_client
+from ai import AIService
 
 router = APIRouter()
 
 # return service status
 @router.get("/healthz")
-async def healthz() -> dict[str, str]:
+async def healthz(qdrant_client = Depends(get_qdrant_client), redis_client = Depends(get_redis_client)) -> dict[str, str]:
     try:
         await qdrant_client.info() # version call to health check
         qdrant_health = True  

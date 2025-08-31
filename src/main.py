@@ -15,4 +15,7 @@ async def main():
 
     # setup
     await setup_qdrant_collection("main", 384, "COSINE")
-    ai = await AIService.create("all-MiniLM-L6-v2", "main")
+    # dependency injection
+    app.state.ai = await AIService.create("all-MiniLM-L6-v2", "main", qdrant_client)
+    app.state.qdrant_client = qdrant_client
+    app.state.redis_client = redis_client

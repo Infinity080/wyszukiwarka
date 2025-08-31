@@ -1,22 +1,23 @@
-from api.clients import qdrant_client 
+from qdrant_client.async_qdrant_client import AsyncQdrantClient
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import pandas as pd
 
 class AIService:
-    def __init__(self, model_name: str, collection_name: str) -> None:
+    def __init__(self, model_name: str, collection_name: str, qdrant_client: AsyncQdrantClient) -> None:
         self.model = SentenceTransformer(model_name)
         self.collection_name = collection_name
         self.texts = pd.DataFrame()
+        self.qdrant_client = qdrant_client
 
     @classmethod
-    async def create(cls, model_name: str, collection_name: str) -> "AIService":
-        self = cls(model_name, collection_name)
+    async def create(cls, model_name: str, collection_name: str, qdrant_client: AsyncQdrantClient) -> "AIService":
+        self = cls(model_name, collection_name, qdrant_client)
         
         self.texts = self._load_dataset("data/commonlit_texts.csv")
 
-        collection_info = await qdrant_client.get_collection(collection_name)
+        collection_info = await self.qdrant_client.get_collection(collection_name)
         if collection_info.points_count <= 0:
             embeddings = self._generate_embeddings()
             await self.save_embeddings_to_qdrant(embeddings)
@@ -54,7 +55,7 @@ class AIService:
             points.append(point)
         for i in range(0, len(points), 100): # upload in batches of 100 to avoid timeouts
             batch = points[i:i + 100]
-            await qdrant_client.upsert(
+            await self.qdrant_client.upsert(
                 collection_name=self.collection_name,
                 points=batch
             )
