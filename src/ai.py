@@ -6,7 +6,7 @@ import pandas as pd
 
 class AIService:
     def __init__(self, model_name: str, collection_name: str, qdrant_client: AsyncQdrantClient) -> None:
-        self.model = SentenceTransformer(model_name)
+        self.model = None
         self.collection_name = collection_name
         self.texts = pd.DataFrame()
         self.qdrant_client = qdrant_client
@@ -14,6 +14,7 @@ class AIService:
     @classmethod
     async def create(cls, model_name: str, collection_name: str, qdrant_client: AsyncQdrantClient) -> "AIService":
         self = cls(model_name, collection_name, qdrant_client)
+        self.model = SentenceTransformer(model_name)
         
         self.texts = self._load_dataset("data/commonlit_texts.csv")
 

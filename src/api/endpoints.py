@@ -49,3 +49,33 @@ async def ingest (request: Request, ai: AIService = Depends(get_ai_service)) -> 
     request.app.state.ai = new_ai
 
     return {"status" : "ingest finished"}
+
+@router.get("/doc/{id}")
+def get_doc(id: int, ai: AIService = Depends(get_ai_service)) -> dict | None:
+    if "id" not in ai.texts.columns:
+        return None
+
+    doc = ai.texts[ai.texts["id"] == id]
+
+    if doc.empty: 
+        return None
+    return doc.iloc[0].to_dict()
+    
+@router.get("/queries/recent")
+async def recent_queries(limit: int = 5, redis_client = Depends(get_redis_client)) -> dict:
+    recent = await redis_client.lrange("queries", 0, limit - 1)
+    if not recent:
+        return {"queries": []}
+    return {"queries" : [i.decode() for i in recent]} 
+
+@router.get("/stats")
+def stats(ai: AIService = Depends(get_ai_service)) -> dict:
+    if ai.texts.empty:
+        return {"stats": {}}
+    document_count = len(ai.texts)
+    avg_document_length = ai.texts["text"].apply(len).mean()
+    unique_authors = ai.texts["metadata"].apply(lambda x: x.get("author")).nunique()
+
+    return {"stats": {
+        "document_count": document_count, "avg_document_length": avg_document_length, "unique_authors": unique_authors
+    }}
