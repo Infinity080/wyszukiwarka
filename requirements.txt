@@ -7,3 +7,4 @@ sentence-transformers
 scikit-learn
 pandas
 numpy
+python-json-logger
