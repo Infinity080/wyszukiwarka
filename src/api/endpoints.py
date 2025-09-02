@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Query
 from api.dependencies import get_ai_service, get_qdrant_client, get_redis_client
 from ai import AIService
 
@@ -29,7 +29,12 @@ async def healthz(qdrant_client = Depends(get_qdrant_client), redis_client = Dep
 
 
 @router.post("/search")
-async def search(q: str, k: int = 10, ai: AIService = Depends(get_ai_service), redis_client = Depends(get_redis_client)) -> dict:
+async def search( # use Query for easier testing
+    q: str = Query(min_length=3, max_length=50),
+    k: int = Query(10, ge=1, le=20),
+    ai: AIService = Depends(get_ai_service),
+    redis_client = Depends(get_redis_client)
+) -> dict:
     if ai.texts.empty:
         return {"results": []}
 
