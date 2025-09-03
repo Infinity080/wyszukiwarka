@@ -32,7 +32,7 @@ class AIService:
         df.insert(0, 'id', df.pop('index'))
 
         # text
-        text_columns = ["description", "excerpt", "notes"]
+        text_columns = ["description", "description", "intro", "excerpt", "notes"]
         df["text"] = df[text_columns].fillna("").astype(str).agg(' '.join, axis=1)
         
         # metadata
