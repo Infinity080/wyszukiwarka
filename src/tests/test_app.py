@@ -36,11 +36,11 @@ class MockRedis:
     async def lrange(self, name, start, end):
         return self.data.get(name, [])[start:end+1]
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def mock_redis():
     return MockRedis()
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 async def mock_client(mock_redis):
     mock_service = MockAIService()
     app.state.ai = mock_service.ai
@@ -50,9 +50,9 @@ async def mock_client(mock_redis):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client
 
-@pytest.fixture # shared ingested client to limit /ingest calls
+@pytest.fixture(scope="session") # shared ingested client to limit /ingest calls
 async def ingested_client(mock_client):
-    _ = await mock_client.post("/ingest")
+    await mock_client.post("/ingest")
     yield mock_client
 
 # test endpoints
@@ -68,7 +68,7 @@ async def test_healthz(mock_client):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("k", [1, 5, 15])
 async def test_search_k(mock_client, k):
-    response = await mock_client.post("/search", params={"q": "random q", "k": k})
+    response = await mock_client.get("/search", params={"q": "random q", "k": k})
     assert response.status_code == 200
     data = response.json()
     assert len(data["results"]) <= k
@@ -76,13 +76,20 @@ async def test_search_k(mock_client, k):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("k", [0, -1, -10, 1.5, 100])
 async def test_search_bad_k(mock_client, k):
-    response = await mock_client.post("/search", params={"q": "random q", "k": k})
+    response = await mock_client.get("/search", params={"q": "random q", "k": k})
     assert response.status_code == 422
 
 @pytest.mark.asyncio
 async def test_search_no_params(mock_client):
-    response = await mock_client.post("/search")
+    response = await mock_client.get("/search")
     assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_stats_before_ingest(mock_client):
+    response = await mock_client.get("/stats")
+    assert response.status_code == 200
+    data = response.json() 
+    assert data["stats"] == {}
 
 @pytest.mark.asyncio
 async def test_ingest(mock_client): # keep test_ingest isolated to truly test the endpoint
@@ -92,13 +99,6 @@ async def test_ingest(mock_client): # keep test_ingest isolated to truly test th
     data = response.json()
     assert data["status"] == "ingest finished"
     assert app.state.ai != old_ai
-
-@pytest.mark.asyncio
-async def test_stats_before_ingest(mock_client):
-    response = await mock_client.get("/stats")
-    assert response.status_code == 200
-    data = response.json() 
-    assert data["stats"] == {}
 
 @pytest.mark.asyncio
 async def test_stats_after_ingest(ingested_client):
@@ -119,7 +119,7 @@ async def test_doc(ingested_client):
 
 @pytest.mark.asyncio
 async def test_recent_queries(ingested_client):
-    _ = await ingested_client.post("/search", params={"q": "test q", "k": 1})
+    _ = await ingested_client.get("/search", params={"q": "test q", "k": 1})
     response = await ingested_client.get("/queries/recent", params={"limit": 5})
     assert response.status_code == 200
     data = response.json()
@@ -128,9 +128,9 @@ async def test_recent_queries(ingested_client):
 
 @pytest.mark.asyncio
 async def test_recent_queries_order(ingested_client):
-    await ingested_client.post("/search", params={"q": "query 1", "k": 1})
-    await ingested_client.post("/search", params={"q": "query 2", "k": 1})
-    await ingested_client.post("/search", params={"q": "query 3", "k": 1})
+    await ingested_client.get("/search", params={"q": "query 1", "k": 1})
+    await ingested_client.get("/search", params={"q": "query 2", "k": 1})
+    await ingested_client.get("/search", params={"q": "query 3", "k": 1})
 
     response = await ingested_client.get("/queries/recent", params={"limit": 3})
     assert response.status_code == 200
