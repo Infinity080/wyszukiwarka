@@ -1,7 +1,7 @@
 # Kompaktowa wyszukiwarka
 
 Kompaktowy serwis do wyszukiwania krótkich tekstów podobnych do przesłanego promptu.  
-System wykorzystuje embeddingi generowane przez model (SentenceTransformera) i przechowuje je w bazie wektorowej **Qdrant**.  
+System wykorzystuje embeddingi generowane przez model (SentenceTransformer) i przechowuje je w bazie wektorowej **Qdrant**.  
 Przesyłane prompty zapisywane są w historii w bazie danych **Redis**.  
 
 ---
@@ -14,14 +14,20 @@ Przesyłane prompty zapisywane są w historii w bazie danych **Redis**.
 
 ---
 
+## Wymagania wstępne
+- **Docker** (>= 23.0)
+
+---
+
 ## Instrukcje uruchomienia
 
 ```bash
+git clone https://github.com/Infinity080/wyszukiwarka && cd wyszukiwarka/
 docker compose up --build
 ```
 
 UWAGA:  
-przed pierwszym uruchomieniem wyszukiwarki musisz załadować zbiór danych i wygenerować embeddingi za pomocą:
+przed pierwszym wyszukiwaniem musisz załadować zbiór danych i wygenerować embeddingi za pomocą:
 ```bash
 curl -X POST http://localhost:8000/ingest
 ```
@@ -31,7 +37,7 @@ curl -X POST http://localhost:8000/ingest
 Serwis przychodzi razem z zestawem testów do sprawdzenia funkcjonalności endpointów API.  
 Możemy je odpalić za pomocą komendy:
 ```bash
-docker-compose run --rm app pytest --asyncio-mode=auto -pdb
+docker compose run --rm app pytest --asyncio-mode=auto
 ```
 
 ---
@@ -50,7 +56,7 @@ docker-compose run --rm app pytest --asyncio-mode=auto -pdb
     - metryka euklidesowa nie bierze pod uwagę kierunku wektora, który jest kluczowy w embeddingach tekstowych,
     - (tak było w wymaganiach :D).
 
-- **Embeddingi** 
+- **Embeddingi:** 
     - generowane przez model "all-MiniLM-L6-v2", ponieważ jest lekki, działa na CPU oraz generuje wystarczająco dobre embeddingi do naszych tekstów,
     - enkodowane są konkatenacje kolumn zawierających: krótki opis, wprowadzenie, fragment i dodatkowe notatki.
 
@@ -58,8 +64,8 @@ docker-compose run --rm app pytest --asyncio-mode=auto -pdb
 
 ## Dodatkowe
 
-- **Trwałość danych**, osobne wolumeny dla qdrant i redis w docker-compose.yml,
-- **logowanie** w formacie JSON do pliku i strumienia (timestamp, request_path, status_code, method, duration).
+- **Trwałość danych**, osobne wolumeny dla Qdrant i Redis w docker-compose.yml,
+- **Logowanie** w formacie JSON do pliku i strumienia (timestamp, request_path, status_code, method, duration).
 
 ## Format danych                  
 
@@ -74,7 +80,7 @@ Plik CSV w data/commonlit_texts.csv z kolumnami:
 
 ## Prezentacja działania
 
-Dokładną dokumentację api udostępnioną przez OpenAPI możesz obejrzeć na:
+Dokładną dokumentację API udostępnioną przez OpenAPI możesz obejrzeć na:
 [http://localhost:8000/docs](http://localhost:8000/docs)  
 Przykładowe requesty do sprawdzenia endpointów:
 
@@ -88,7 +94,7 @@ sudo apt update && sudo apt install -y curl
 ### Ładowanie danych
 
 Najpierw musimy załadować zbiór danych i wygenerować endpointy.  
-**/ingest** odpowiada za ładowanie datasetu, generowanie embeddingu i przygotowywanie odpowiednich serwisów.
+**/ingest** odpowiada za ładowanie datasetu, generowanie embeddingów i przygotowywanie odpowiednich serwisów.
 
 ```bash
 curl -X POST http://localhost:8000/ingest

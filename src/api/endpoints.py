@@ -28,7 +28,7 @@ async def healthz(qdrant_client = Depends(get_qdrant_client), redis_client = Dep
     }
 
 
-@router.post("/search")
+@router.get("/search")
 async def search( # use Query for easier testing
     q: str = Query(min_length=3, max_length=50),
     k: int = Query(10, ge=1, le=20),
