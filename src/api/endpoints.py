@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Query
 from api.dependencies import get_ai_service, get_qdrant_client, get_redis_client
 from ai import AIService
+from src.main import logger
 
 router = APIRouter()
 
@@ -11,13 +12,13 @@ async def healthz(qdrant_client = Depends(get_qdrant_client), redis_client = Dep
         await qdrant_client.info() # version call to health check
         qdrant_health = True  
     except Exception as e:
-        print(f"Qdrant failed: {e}")
+        logger.error(f"Qdrant failed: {e}")
         qdrant_health = False
 
     try:
         redis_health = await redis_client.ping()
     except Exception as e:
-        print(f"Redis failed: {e}")
+        logger.error(f"Redis failed: {e}")
         redis_health = False
 
     status = qdrant_health and redis_health

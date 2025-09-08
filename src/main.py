@@ -2,29 +2,13 @@ from fastapi import FastAPI, Request
 from api.endpoints import router
 from api.clients import qdrant_client, redis_client, setup_qdrant_collection
 from ai import AIService
-import logging
-from pythonjsonlogger import jsonlogger
+from logger import logger
 import time
 from datetime import datetime, timedelta, timezone
 
 # setup
 app = FastAPI()
 app.include_router(router)
-logger = logging.getLogger(__name__)
-
-formatter = jsonlogger.JsonFormatter(
-    "%(timestamp)s %(levelname)s %(message)s %(request_path)s %(status_code)s"
-)
-
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(formatter)
-logger.addHandler(stream_handler)
-
-file_handler = logging.FileHandler("requests.log")
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-
-logger.setLevel(logging.INFO)
 
 @app.middleware("http")
 async def log_middleware(request: Request, call_next):
