@@ -4,17 +4,26 @@ from main import app
 import pytest
 from unittest.mock import AsyncMock
 import pandas as pd
+import numpy as np
 
 class QdrantCollection:
     def __init__(self):
         self.points_count = 0
 
 class MockAIState:
-    def __init__(self, qdrant_client, redis_client):
+    def __init__(self, model_name, collection_name, qdrant_client):
+        self.model_name = model_name
+        self.collection_name = collection_name
         self.qdrant_client = qdrant_client
-        self.redis_client = redis_client
         self.texts = pd.DataFrame()
         self.model = None
+
+class MockSentenceTransformer:
+    def __init__(self, model_name):
+        self.model_name = model_name
+
+    def encode(self, texts):
+        return np.array([[0.0] for _ in texts]) # fake ecnodings
 
 class MockAIService:
     def __init__(self):
@@ -23,7 +32,7 @@ class MockAIService:
 
         self.qdrant_client.get_collection = AsyncMock(return_value=QdrantCollection())
 
-        self.ai = MockAIState(self.qdrant_client, self.redis_client) # reuse clients
+        self.ai = MockAIState("test_model_name", "test_collection_name", self.qdrant_client) # reuse clients
 
 class MockRedis:
     def __init__(self):
@@ -35,6 +44,10 @@ class MockRedis:
         self.data.setdefault(name, []).insert(0, value)
     async def lrange(self, name, start, end):
         return self.data.get(name, [])[start:end+1]
+
+@pytest.fixture(autouse=True)
+def patch_sentence_transformer(monkeypatch):
+    monkeypatch.setattr("ai.SentenceTransformer", MockSentenceTransformer) # monkeypatch the sentence_transformer to avoid loading a real model
 
 @pytest.fixture(scope="session")
 def mock_redis():
@@ -50,7 +63,7 @@ async def mock_client(mock_redis):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client
 
-@pytest.fixture(scope="session") # shared ingested client to limit /ingest calls
+@pytest.fixture(scope="function")
 async def ingested_client(mock_client):
     await mock_client.post("/ingest")
     yield mock_client
