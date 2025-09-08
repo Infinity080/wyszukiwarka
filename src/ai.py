@@ -1,24 +1,24 @@
 from qdrant_client.async_qdrant_client import AsyncQdrantClient
-from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import pandas as pd
 
 class AIService:
     def __init__(self, model_name: str, collection_name: str, qdrant_client: AsyncQdrantClient) -> None:
+        self.model_name = model_name
         self.model = None
         self.collection_name = collection_name
         self.texts = pd.DataFrame()
         self.qdrant_client = qdrant_client
 
     @classmethod
-    async def create(cls, model_name: str, collection_name: str, qdrant_client: AsyncQdrantClient) -> "AIService":
-        self = cls(model_name, collection_name, qdrant_client)
-        self.model = SentenceTransformer(model_name)
+    async def create(cls, ai: "AIService") -> "AIService":
+        self = cls(ai.model_name, ai.collection_name, ai.qdrant_client)
+        self.model = SentenceTransformer(self.model_name)
         
         self.texts = self._load_dataset("data/commonlit_texts.csv")
 
-        collection_info = await self.qdrant_client.get_collection(collection_name)
+        collection_info = await self.qdrant_client.get_collection(self.collection_name)
         if collection_info.points_count <= 0:
             embeddings = self._generate_embeddings()
             await self.save_embeddings_to_qdrant(embeddings)

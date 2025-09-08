@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Query
 from api.dependencies import get_ai_service, get_qdrant_client, get_redis_client
 from ai import AIService
-from src.main import logger
+from logger import logger
 
 router = APIRouter()
 
@@ -51,7 +51,7 @@ async def search( # use Query for easier testing
 @router.post("/ingest")
 async def ingest (request: Request, ai: AIService = Depends(get_ai_service)) -> dict:
     # reinstantiate the AIService to load a dataset, create embeddings and save to Qdrant
-    new_ai = await AIService.create("all-MiniLM-L6-v2", "main", ai.qdrant_client)
+    new_ai = await AIService.create(ai)
     request.app.state.ai = new_ai
 
     return {"status" : "ingest finished"}
